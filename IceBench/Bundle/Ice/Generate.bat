@@ -1,0 +1,1 @@
+..\..\packages\zeroc.ice.net.3.7.4\tools\slice2cs.exe --output-dir ..\Bundle Worker.ice

@@ -1,0 +1,78 @@
+﻿<Window x:Class="IceBench.MainWindow" 
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:local="clr-namespace:IceBench"
+        Title="Bench" Height="700" MinHeight="600" Width="900" MinWidth="900" FontFamily="Consolas">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <GroupBox x:Name="groupServer" Header="Server" Grid.Column="0" Margin="5" Foreground="#FF0000FF" FontWeight="Bold">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Label Content="Status:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
+                        <Label Name="labelServerStatus" Width="100" FontWeight="Normal" Height="30" VerticalContentAlignment="Center" Foreground="#FF4682B4" Margin="0,0,90,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="RunAt:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
+                        <TextBox Name="textBoxServerArgs" FontWeight="Normal" Width="350" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ServerArgs_TextChanged" />
+                    </StackPanel>                   
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Name="buttonStartServer" Content="Start" Width="100" Height="30" Margin="25 5" Click="BtnStartServer_Click" />
+                        <Button Name="buttonStopServer" Content="Stop" Width="100" Height="30" Margin="25 5" Click="BtnStopServer_Click" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Name="buttonRestartServer" Content="Restart" Width="100" Height="30" Margin="0 5" Click="BtnRestartServer_Click" />
+                        <Label Content="After(ms):" Height="30" VerticalContentAlignment="Center" />
+                        <TextBox Name="textBoxServerRestartInterval" FontWeight="Normal" Width="80" Height="30" VerticalContentAlignment="Center" TextChanged="ServerRestartInterval_TextChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Name="buttonGenerateError" Content="Generate Error" Width="200" Height="35" Margin="0 20" Click="BtnThrowServerError_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Header="Client" Grid.Column="1" Margin="5" Foreground="#FF800080" FontWeight="Bold">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Label Content="Status:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
+                        <Label Name="labelClientStatus" FontWeight="Normal" Width="100" Height="30" VerticalContentAlignment="Center" Foreground="#FF4682B4" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label Content="Connect:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
+                        <TextBox Name="textBoxClientArgs" FontWeight="Normal" Width="350" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ClientArgs_TextChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="ContentSize(1MB~128MB):" Width="200" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
+                        <TextBox Name="textBoxContentSize" FontWeight="Normal" Width="150" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ContentSize_TextChanged" />
+                    </StackPanel>
+                    <CheckBox Name="checkBoxAsync" Content="Remote Call Method with async Version" Height="40" HorizontalAlignment="Center" VerticalContentAlignment="Center" Checked="CheckBoxAsync_Checked" Unchecked="CheckBoxAsync_Unchecked" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Name="buttonStartClient" Content="Start" Width="100" Height="30" Margin="25 5" Click="BtnStartClient_Click" />
+                        <Button Name="buttonStopClient" Content="Stop" Width="100" Height="30" Margin="25 5" Click="BtnStopClient_Click" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Name="buttonRestartClient" Content="Restart" Width="100" Height="30" Margin="0 5" Click="BtnRestartClient_Click" />
+                        <Label Content="After(ms):" Height="30" VerticalContentAlignment="Center" />
+                        <TextBox Name="textBoxClientRestartInterval" FontWeight="Normal" Width="80" Height="30" VerticalContentAlignment="Center" TextChanged="ClientRestartInterval_TextChanged" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+        <Grid Row="1">
+            <ListView Name="listViewMessages" Margin="5" />
+        </Grid>
+        <Grid Row="2">
+            <UniformGrid Rows="1">
+                <Button Name="buttonClearLogs" Width="200" Height="30" Margin="5" Content="Clear Logs" Click="BtnClearLogs_Click" />
+                <Button Name="buttonExportLogs" Width="200" Height="30" Margin="5" Content="Export Logs" Click="BtnExportLogs_Click" />
+            </UniformGrid>
+        </Grid>
+    </Grid>
+</Window>
