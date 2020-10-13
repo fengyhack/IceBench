@@ -1,5 +1,5 @@
 using Ice;
-using System.Threading.Tasks;
+using IceBench.Bundle;
 
 namespace Bundle
 {
@@ -12,6 +12,10 @@ namespace Bundle
 		public event ExceptionOccurredNotify OnExceptionOccured;
 
 		private Communicator communicator;
+
+		private ACMCloseFlag acmClose;
+
+		private ACMHeartbeatFlag acmHeartbeat;
 
 		private BundleStatus _Status;
 		public BundleStatus Status
@@ -32,8 +36,10 @@ namespace Bundle
 
 		private WorkerImpl servant;
 
-		public void Start(string args)
+		public void Start(string args, ACMCloseFlag close = ACMCloseFlag.CloseOff, ACMHeartbeatFlag heartbeat = ACMHeartbeatFlag.HeartbeatOff)
 		{
+			acmClose = close;
+			acmHeartbeat = heartbeat;
 			if (communicator == null || communicator.isShutdown())
 			{
 				Status = BundleStatus.Starting;
@@ -42,12 +48,22 @@ namespace Bundle
 					const int SIZE_MAX = 128 * 1024 * 1024;
 					var initData = new InitializationData();
 					initData.properties = Util.createProperties();
+					initData.properties.setProperty("Ice.Trace.Network", "2");
 					initData.properties.setProperty("Ice.MessageSizeMax", $"{SIZE_MAX}");
 					initData.properties.setProperty("Filesystem.MaxFileSize", $"{SIZE_MAX}");
+					initData.properties.setProperty("Ice.ACM.Close", $"{(int)acmClose}");
+					initData.properties.setProperty("Ice.ACM.Heartbeat", $"{(int)acmHeartbeat}");
 					communicator = Util.initialize(initData);
+					var pos = args.IndexOf(':');
+					var name = "SimpleMessenger";
+					if (pos > 0)
+					{
+						name = args.Substring(0, pos);
+						args = args.Substring(pos + 1).TrimStart();
+					}
 					ObjectAdapter objectAdapter = communicator.createObjectAdapterWithEndpoints("SimpleMessengerAdapter", args);
 					servant = new WorkerImpl(OnMethodInvoked);
-					Identity id = Util.stringToIdentity("SimpleMessenger");
+					Identity id = Util.stringToIdentity(name);
 					objectAdapter.add(servant, id);
 					objectAdapter.activate();
 					Status = BundleStatus.Running;

@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="Bundle\ACMFlags.cs" />
     <Compile Include="Bundle\Ice\Worker.cs" />
     <Compile Include="Bundle\Server\WorkerImpl.cs" />
     <Page Include="MainWindow.xaml">

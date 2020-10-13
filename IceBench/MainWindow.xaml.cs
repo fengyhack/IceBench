@@ -36,12 +36,13 @@ namespace IceBench
 		{
 			InitializeComponent();
 			messages = new List<string>();
-			textBoxServerArgs.Text = "default -h localhost -p 5050 -t 5000";
+			textBoxServerArgs.Text = "SimpleMessenger: default -h localhost -p 5050 -t 5000";
 			buttonStartServer.IsEnabled = true;
 			buttonStopServer.IsEnabled = false;
 			buttonRestartServer.IsEnabled = false;
-			textBoxClientArgs.Text = "default -h localhost -p 5050 -t 2000";
+			textBoxClientArgs.Text = "SimpleMessenger: default -h localhost -p 5050 -t 2000";
 			buttonStartClient.IsEnabled = true;
+			buttonIdleClient.IsEnabled = false;
 			buttonStopClient.IsEnabled = false;
 			buttonRestartClient.IsEnabled = false;
 			textBoxServerRestartInterval.Text = "1000";
@@ -52,7 +53,7 @@ namespace IceBench
 			buttonExportLogs.IsEnabled = false;
 			textBoxContentSize.IsEnabled = false;
 			iceServer = new IceServer();
-			iceClient = new IceClient(isAsyncMode, contentSizeMB);
+			iceClient = new IceClient();
 			iceServer.OnStatusChanged += IceServer_OnStatusChanged;
 			iceServer.OnMethodInvoked += IceServer_OnMethodInvoked;
 			iceServer.OnExceptionOccured += IceServer_OnExceptionOccured;
@@ -77,10 +78,20 @@ namespace IceBench
             }
 
 			AddMessage($"Server Status: {status}");
+			if (status != BundleStatus.Running)
+			{
+				App.Current.Dispatcher.Invoke(() =>
+				{
+					tbTime.Text = "";
+				});
+				timer?.Change(Timeout.Infinite, Timeout.Infinite);
+			}
 			Application.Current.Dispatcher.Invoke(delegate
 			{
 				labelServerStatus.Content = $"{status}";
 				labelServerStatus.Foreground = Brushes.SteelBlue;
+				cbServerClose.IsEnabled = (status != BundleStatus.Running);
+				cbServerHeartbeat.IsEnabled = (status != BundleStatus.Running);
 				switch (status)
 				{
 				case BundleStatus.Unknown:
@@ -111,7 +122,7 @@ namespace IceBench
 
 		private void IceServer_OnMethodInvoked(OperationType operation, bool isAsync)
 		{
-			AddMessage("Server Executing: " + operation + ", IsAsync: " + isAsync);
+			AddMessage("Server Executing: " + operation + ", AMI: " + isAsync);
 		}
 
 		private void IceServer_OnExceptionOccured(Exception exception)
@@ -122,6 +133,14 @@ namespace IceBench
 		private void IceClient_OnStatusChanged(BundleStatus status)
 		{
 			AddMessage($"Client Status: {status}");
+			if (status != BundleStatus.Running)
+			{
+				App.Current.Dispatcher.Invoke(() =>
+				{
+					tbTime.Text = "";
+				});
+				timer?.Change(Timeout.Infinite, Timeout.Infinite);
+			}
 			Application.Current.Dispatcher.Invoke(delegate
 			{
 				if (status != BundleStatus.Unknown)
@@ -130,6 +149,10 @@ namespace IceBench
 				}
 				labelClientStatus.Content = $"{status}";
 				labelClientStatus.Foreground = Brushes.SteelBlue;
+				cbClientHeartbeat.IsEnabled = (status != BundleStatus.Running);
+				checkBoxAsync.IsEnabled = (status == BundleStatus.Running);
+				buttonIdleClient.IsEnabled = (status == BundleStatus.Running);
+				buttonIdleClient.Content = iceClient.Hold ? "Active" : "Idle";
 				switch (status)
 				{
 				case BundleStatus.Unknown:
@@ -158,14 +181,38 @@ namespace IceBench
 			});
 		}
 
+		private int counter = 0;
+		private Timer timer = null;
+
+		private void TimerCallback(object state)
+        {
+			++counter;
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				tbTime.Text = $"{counter}";
+			});
+			timer.Change(1000, 1000);
+		}
+
 		private void IceClient_OnMethodInvoked(OperationType operation, bool isAsync)
 		{
 			AddMessage("Client Calling:   " + operation + ", IsAsync: " + isAsync);
+			counter = 0;
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				tbTime.Text = $"{counter}";
+			});
+			if (timer == null)
+			{
+				timer = new Timer(TimerCallback);
+			}
+			timer.Change(1000, 1000);
 		}
 
 		private void IceClient_OnExceptionOccured(Exception exception)
 		{
 			AddMessage($"Client Exception: {exception.Message}");
+			timer.Change(Timeout.Infinite, Timeout.Infinite);
 		}
 
 		protected override void OnClosing(CancelEventArgs e)
@@ -235,9 +282,17 @@ namespace IceBench
 			buttonStartServer.IsEnabled = false;
 			buttonStopServer.IsEnabled = true;
 			AddMessage("User Start Server: " + serverArgs);
-			Task.Run(delegate
+			var acmClose = Bundle.ACMCloseFlag.CloseOff;
+			var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
+			App.Current.Dispatcher.Invoke(() =>
 			{
-				iceServer.Start(serverArgs);
+				Enum.TryParse("Close" + cbServerClose.Text, out acmClose);
+				Enum.TryParse("Heartbeat" + cbServerHeartbeat.Text, out acmHeartbeat);
+			});
+			Thread.Sleep(1);
+			Task.Run(() =>
+			{
+				iceServer.Start(serverArgs, acmClose, acmHeartbeat);
 			});
 		}
 
@@ -247,7 +302,7 @@ namespace IceBench
 			buttonStartServer.IsEnabled = true;
 			buttonStopServer.IsEnabled = false;
 			AddMessage("User Stop Server");
-			iceServer.Stop();
+			iceServer.Stop();			
 		}
 
 		private void BtnRestartServer_Click(object sender, RoutedEventArgs e)
@@ -262,7 +317,6 @@ namespace IceBench
 				iceServer.OnExceptionOccured -= IceServer_OnExceptionOccured;
 				iceServer.OnMethodInvoked -= IceServer_OnMethodInvoked;
 				iceServer.Exit();
-				IceServer_OnStatusChanged(iceServer.Status);
 				Thread.Sleep(serverRestartIntervalMS);
 				iceServer = new IceServer();
 				iceServer.OnStatusChanged += IceServer_OnStatusChanged;
@@ -273,8 +327,18 @@ namespace IceBench
 					buttonStopServer.IsEnabled = true;
 					buttonRestartServer.IsEnabled = true;
 				});
-				IceServer_OnStatusChanged(iceServer.Status);
-				iceServer.Start(serverArgs);
+				var acmClose = Bundle.ACMCloseFlag.CloseOff;
+				var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    Enum.TryParse("Close" + cbServerClose.Text, out acmClose);
+                    Enum.TryParse("Heartbeat" + cbServerHeartbeat.Text, out acmHeartbeat);
+                });
+                Thread.Sleep(1);
+				Task.Run(() =>
+				{
+					iceServer.Start(serverArgs, acmClose, acmHeartbeat);
+				});
 			});
 		}
 
@@ -298,9 +362,18 @@ namespace IceBench
 			buttonStartClient.IsEnabled = false;
 			buttonStopClient.IsEnabled = true;
 			AddMessage("User Start Client: " + clientArgs);
-			Task.Run(delegate
+			var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
+			var amiEnabled = false;
+			App.Current.Dispatcher.Invoke(() =>
 			{
-				iceClient.Start(clientArgs);
+				Enum.TryParse("Heartbeat" + cbClientHeartbeat.Text, out acmHeartbeat);
+				amiEnabled = checkBoxAsync.IsChecked.Value;
+			});
+			Thread.Sleep(1);
+			iceClient.SetContentSize(contentSizeMB);
+			Task.Run(() =>
+			{
+				iceClient.Start(clientArgs, true, amiEnabled, acmHeartbeat);
 			});
 		}
 
@@ -327,7 +400,7 @@ namespace IceBench
 				iceClient.Exit();
 				IceClient_OnStatusChanged(iceClient.Status);
 				Thread.Sleep(clientRestartIntervalMS);
-				iceClient = new IceClient(isAsyncMode, contentSizeMB);
+				iceClient = new IceClient();
 				iceClient.OnStatusChanged += IceClient_OnStatusChanged;
 				iceClient.OnExceptionOccured += IceClient_OnExceptionOccured;
 				iceClient.OnMethodInvoked += IceClient_OnMethodInvoked;
@@ -337,20 +410,33 @@ namespace IceBench
 					buttonRestartClient.IsEnabled = true;
 				});
 				IceClient_OnStatusChanged(iceClient.Status);
-				iceClient.Start(clientArgs);
+				var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
+				var amiEnabled = false;
+				App.Current.Dispatcher.Invoke(() =>
+				{
+					Enum.TryParse("Heartbeat" + cbClientHeartbeat.Text, out acmHeartbeat);
+					amiEnabled = checkBoxAsync.IsChecked.Value;
+				});
+				Thread.Sleep(1);
+				iceClient.SetContentSize(contentSizeMB);
+				var hold = iceClient.Hold;
+				Task.Run(() =>
+				{
+					iceClient.Start(clientArgs, hold, amiEnabled, acmHeartbeat);
+				});
 			});
 		}
 
 		private void CheckBoxAsync_Checked(object sender, RoutedEventArgs e)
 		{
 			isAsyncMode = true;
-			iceClient.SetAsync(isAsyncMode);
+			iceClient.SetAMI(isAsyncMode);
 		}
 
 		private void CheckBoxAsync_Unchecked(object sender, RoutedEventArgs e)
 		{
 			isAsyncMode = false;
-			iceClient.SetAsync(isAsyncMode);
+			iceClient.SetAMI(isAsyncMode);
 		}
 
 		private void AddMessage(string message)
@@ -388,6 +474,20 @@ namespace IceBench
 			messages.Clear();
 			buttonClearLogs.IsEnabled = false;
 			buttonExportLogs.IsEnabled = false;
+		}
+
+        private void BtnIdleClient_Click(object sender, RoutedEventArgs e)
+        {
+			iceClient.ToggleHold();
+			if (iceClient.Hold)
+			{
+				buttonIdleClient.Content = "Active";
+			}
+			else
+			{
+				buttonIdleClient.Content = "Idle";
+
+			}
 		}
     }
 }

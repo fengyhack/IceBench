@@ -32,12 +32,12 @@ namespace Bundle
 
             int SMALL = contentSizeMB * 256 * 1024;
             int BIG = contentSizeMB * 1024 * 1024;
-            int LONG_TIME_MS = 5000;
+            int LONG_TIME_MS = 1000 * 60 * 3; //3min
 
             try
             {
                 notify?.Invoke(operation, false);
-                if(userRequestError)
+                if (userRequestError)
                 {
                     userRequestError = false;
                     throw new OperationException("user requested");
@@ -69,7 +69,7 @@ namespace Bundle
             }
 
             int DEFAULT = contentSizeMB * 1024 * 1024;
-            int LONG_TIME_MS = 10000;
+            int LONG_TIME_MS = 1000 * 60 + 500; //60s+500ms
 
             try
             {

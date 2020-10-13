@@ -2,11 +2,14 @@ using Ice;
 using System;
 using System.Threading;
 using System.Collections.Generic;
+using IceBench.Bundle;
 
 namespace Bundle
 {
 	public class IceClient
 	{
+		public bool Hold { get; private set; }
+
 		public event StatusChangedNotify OnStatusChanged;
 
 		public event MethodInvokedNotify OnMethodInvoked;
@@ -15,11 +18,13 @@ namespace Bundle
 
 		private Communicator communicator;
 
-		private bool isAsyncMode;
-
 		private int contentSizeMB;
 
 		private bool isRunning;
+
+		private bool amiEnabled;
+
+		private ACMHeartbeatFlag acmHeartbeat;
 
 		private int counter;
 
@@ -49,18 +54,20 @@ namespace Bundle
 			OperationType.LongTime
 		};
 
-		public IceClient(bool isAsync, int sizeMB)
+		public IceClient()
 		{
-			isAsyncMode = isAsync;
-			contentSizeMB = sizeMB;
+			Hold = false;
+			amiEnabled = false;
+			acmHeartbeat = ACMHeartbeatFlag.HeartbeatOff;
+			contentSizeMB = 2;
 			isRunning = false;
 			counter = 0;
 			rand = new Random();
 		}
 
-		public void SetAsync(bool isAsync)
+		public void SetAMI(bool enabled)
         {
-			isAsyncMode = isAsync;
+			amiEnabled = enabled;
         }
 
 		public void SetContentSize(int sizeMB)
@@ -71,8 +78,11 @@ namespace Bundle
 			}
 		}
 
-		public async void Start(string args)
+		public async void Start(string args, bool hold = false, bool ami = false, ACMHeartbeatFlag heartbeat = ACMHeartbeatFlag.HeartbeatOff)
 		{
+			Hold = hold;
+			amiEnabled = ami;
+			acmHeartbeat = heartbeat;
 			if (communicator == null || communicator.isShutdown())
 			{
 				Status = BundleStatus.Starting;
@@ -88,8 +98,9 @@ namespace Bundle
 					initData.properties = Util.createProperties();
 					initData.properties.setProperty("Ice.MessageSizeMax", $"{SIZE_MAX}");
 					initData.properties.setProperty("Filesystem.MaxFileSize", $"{SIZE_MAX}");
+					initData.properties.setProperty("Ice.ACM.Heartbeat", $"{(int)acmHeartbeat}");
 					communicator = Util.initialize(initData);
-					WorkerPrx workerPrx = WorkerPrxHelper.checkedCast(communicator.stringToProxy("SimpleMessenger:" + args));
+					WorkerPrx workerPrx = WorkerPrxHelper.checkedCast(communicator.stringToProxy(args));
 					if (workerPrx == null)
 					{
 						throw new ApplicationException("Invalid Proxy");
@@ -98,10 +109,16 @@ namespace Bundle
 					Status = BundleStatus.Running;
 					while (isRunning && communicator != null)
 					{
+						if(Hold)
+                        {
+							Thread.Sleep(100);
+							continue;
+                        }
+
 						var operation = operations[counter % operations.Count];
 						++counter;
-						OnMethodInvoked?.Invoke(operation, isAsyncMode);
-						if (isAsyncMode)
+						OnMethodInvoked?.Invoke(operation, amiEnabled);
+						if (amiEnabled)
 						{
 							try
 							{
@@ -141,6 +158,16 @@ namespace Bundle
 			}
 		}
 
+		public void ToggleHold()
+        {
+			Hold = !Hold;
+        }
+
+		public void SetHeartbeat(ACMHeartbeatFlag heartbeat)
+        {
+			acmHeartbeat = heartbeat;
+        }
+
 		public void Stop()
 		{
 			isRunning = false;
@@ -150,6 +177,7 @@ namespace Bundle
 				try
 				{
 					communicator.shutdown();
+					communicator.waitForShutdown();
 				}
 				catch (System.Exception ex)
 				{

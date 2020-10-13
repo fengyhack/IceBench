@@ -19,14 +19,31 @@
                         <Label Content="Status:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
                         <Label Name="labelServerStatus" Width="100" FontWeight="Normal" Height="30" VerticalContentAlignment="Center" Foreground="#FF4682B4" Margin="0,0,90,0" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label Content="RunAt:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
-                        <TextBox Name="textBoxServerArgs" FontWeight="Normal" Width="350" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ServerArgs_TextChanged" />
-                    </StackPanel>                   
-                    
+                    <TextBox Name="textBoxServerArgs" FontSize="12" FontWeight="Normal" Width="410" Height="30" VerticalContentAlignment="Center" Margin="0 5" TextChanged="ServerArgs_TextChanged" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Name="buttonStartServer" Content="Start" Width="100" Height="30" Margin="25 5" Click="BtnStartServer_Click" />
                         <Button Name="buttonStopServer" Content="Stop" Width="100" Height="30" Margin="25 5" Click="BtnStopServer_Click" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ACM.Close:" VerticalAlignment="Center"/>
+                            <ComboBox Name="cbServerClose" Width="100" SelectedIndex="1" VerticalContentAlignment="Center">
+                                <ComboBoxItem>Off</ComboBoxItem>
+                                <ComboBoxItem>OnIdle</ComboBoxItem>
+                                <ComboBoxItem>OnInvocation</ComboBoxItem>
+                                <ComboBoxItem>OnInvocationAndIdle</ComboBoxItem>
+                                <ComboBoxItem>OnIdleForceful</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                            <TextBlock Text="ACM.Heartbeat:" VerticalAlignment="Center"/>
+                            <ComboBox Name="cbServerHeartbeat" Width="100" SelectedIndex="0" VerticalContentAlignment="Center">
+                                <ComboBoxItem>Off</ComboBoxItem>
+                                <ComboBoxItem>OnDispatch</ComboBoxItem>
+                                <ComboBoxItem>OnIdle</ComboBoxItem>
+                                <ComboBoxItem>Always</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Name="buttonRestartServer" Content="Restart" Width="100" Height="30" Margin="0 5" Click="BtnRestartServer_Click" />
@@ -44,17 +61,26 @@
                         <Label Content="Status:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
                         <Label Name="labelClientStatus" FontWeight="Normal" Width="100" Height="30" VerticalContentAlignment="Center" Foreground="#FF4682B4" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label Content="Connect:" Width="60" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
-                        <TextBox Name="textBoxClientArgs" FontWeight="Normal" Width="350" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ClientArgs_TextChanged" />
-                    </StackPanel>
+                    <TextBox Name="textBoxClientArgs" FontWeight="Normal" FontSize="12" Width="410" Height="30" VerticalContentAlignment="Center" Margin="0 5" TextChanged="ClientArgs_TextChanged" />
                     <StackPanel Orientation="Horizontal">
                         <Label Content="ContentSize(1MB~128MB):" Width="200" Height="30" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Margin="5" />
                         <TextBox Name="textBoxContentSize" FontWeight="Normal" Width="150" Height="30" VerticalContentAlignment="Center" Margin="5" TextChanged="ContentSize_TextChanged" />
                     </StackPanel>
-                    <CheckBox Name="checkBoxAsync" Content="Remote Call Method with async Version" Height="40" HorizontalAlignment="Center" VerticalContentAlignment="Center" Checked="CheckBoxAsync_Checked" Unchecked="CheckBoxAsync_Unchecked" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <CheckBox Name="checkBoxAsync" Content="AMI" HorizontalAlignment="Center" VerticalContentAlignment="Center" Checked="CheckBoxAsync_Checked" Unchecked="CheckBoxAsync_Unchecked" />
+                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                            <TextBlock Text="ACM.Heartbeat:" VerticalAlignment="Center"/>
+                            <ComboBox Name="cbClientHeartbeat" Width="100" SelectedIndex="0" VerticalContentAlignment="Center">
+                                <ComboBoxItem>Off</ComboBoxItem>
+                                <ComboBoxItem>OnDispatch</ComboBoxItem>
+                                <ComboBoxItem>OnIdle</ComboBoxItem>
+                                <ComboBoxItem>Always</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Name="buttonStartClient" Content="Start" Width="100" Height="30" Margin="25 5" Click="BtnStartClient_Click" />
+                        <Button Name="buttonIdleClient" Content="Active" Width="100" Height="30" Margin="25 5" Click="BtnIdleClient_Click" />
                         <Button Name="buttonStopClient" Content="Stop" Width="100" Height="30" Margin="25 5" Click="BtnStopClient_Click" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -71,6 +97,7 @@
         <Grid Row="2">
             <UniformGrid Rows="1">
                 <Button Name="buttonClearLogs" Width="200" Height="30" Margin="5" Content="Clear Logs" Click="BtnClearLogs_Click" />
+                <TextBlock x:Name="tbTime" Width="Auto" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <Button Name="buttonExportLogs" Width="200" Height="30" Margin="5" Content="Export Logs" Click="BtnExportLogs_Click" />
             </UniformGrid>
         </Grid>
