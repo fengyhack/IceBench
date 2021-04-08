@@ -83,7 +83,11 @@
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="Bundle\ACMFlags.cs" />
+    <Compile Include="Bundle\Client\DummyClient.cs" />
+    <Compile Include="Bundle\Ice\Dummy.cs" />
     <Compile Include="Bundle\Ice\Worker.cs" />
+    <Compile Include="Bundle\Server\DummyImpl.cs" />
+    <Compile Include="Bundle\Server\DummyServer.cs" />
     <Compile Include="Bundle\Server\WorkerImpl.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -116,6 +120,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Bundle\Ice\Dummy.ice" />
     <None Include="Bundle\Ice\Worker.ice" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

@@ -230,6 +230,13 @@ namespace IceBench
 				iceClient.OnExceptionOccured -= IceClient_OnExceptionOccured;
 				iceClient.Exit();
 			}
+
+			if(timer != null)
+            {
+				timer.Change(Timeout.Infinite, Timeout.Infinite);
+				timer.Dispose();
+            }
+
 			base.OnClosing(e);
 		}
 

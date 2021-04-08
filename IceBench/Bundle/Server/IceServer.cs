@@ -117,7 +117,6 @@ namespace Bundle
 				try
 				{
 					communicator.shutdown();
-					communicator.destroy();
 					Status = BundleStatus.Shutdown;
 				}
 				catch (System.Exception ex)
