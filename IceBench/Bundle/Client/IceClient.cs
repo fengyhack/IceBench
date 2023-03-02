@@ -26,6 +26,8 @@ namespace Bundle
 
 		private ACMHeartbeatFlag acmHeartbeat;
 
+		private WorkerPrx workerPrx;
+
 		private int counter;
 
 		private readonly Random rand;
@@ -100,7 +102,7 @@ namespace Bundle
 					initData.properties.setProperty("Filesystem.MaxFileSize", $"{SIZE_MAX}");
 					initData.properties.setProperty("Ice.ACM.Heartbeat", $"{(int)acmHeartbeat}");
 					communicator = Util.initialize(initData);
-					WorkerPrx workerPrx = WorkerPrxHelper.checkedCast(communicator.stringToProxy(args));
+					workerPrx = WorkerPrxHelper.checkedCast(communicator.stringToProxy(args));
 					if (workerPrx == null)
 					{
 						throw new ApplicationException("Invalid Proxy");
@@ -117,6 +119,14 @@ namespace Bundle
 
 						var operation = operations[counter % operations.Count];
 						++counter;
+#if SUPPORT_LONG_TIME
+                        // Go
+#else
+						if(operation == OperationType.LongTime)
+						{
+							continue;
+						}
+#endif
 						OnMethodInvoked?.Invoke(operation, amiEnabled);
 						if (amiEnabled)
 						{
@@ -166,6 +176,12 @@ namespace Bundle
 		public void SetHeartbeat(ACMHeartbeatFlag heartbeat)
         {
 			acmHeartbeat = heartbeat;
+        }
+
+		public void InvokeCall(OperationType operation = OperationType.ShortMessage)
+		{
+			workerPrx.PerformAction(operation, 1);
+
         }
 
 		public void Stop()

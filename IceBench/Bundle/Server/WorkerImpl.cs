@@ -30,9 +30,11 @@ namespace Bundle
                 contentSizeMB = 2;
             }
 
+            int MSG = 32;
             int SMALL = contentSizeMB * 256 * 1024;
             int BIG = contentSizeMB * 1024 * 1024;
-            int LONG_TIME_MS = 1000 * 60 * 3; //3min
+            int LONG_TIME_MS = 1000; //1s
+             //int LONG_TIME_MS = 1000 * 60 * 3; //3min
 
             try
             {
@@ -44,6 +46,8 @@ namespace Bundle
                 }
                 switch (operation)
                 {
+                    case OperationType.ShortMessage:
+                        return new OperationResult("ShortMessage", GenerateRandomData("MESSAGE", MSG));
                     case OperationType.SmallFile:
                         return new OperationResult("SmallFile", GenerateRandomData("SMALL", SMALL));
                     case OperationType.BigFile:

@@ -1,4 +1,6 @@
 using Bundle;
+using Ice;
+using IceInternal;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -28,6 +30,8 @@ namespace IceBench
 
 		private bool isAsyncMode;
 
+		private bool isInvoking;
+
 		private int contentSizeMB;
 
 		private readonly List<string> messages;
@@ -36,6 +40,7 @@ namespace IceBench
 		{
 			InitializeComponent();
 			messages = new List<string>();
+			isInvoking = false;
 			textBoxServerArgs.Text = "SimpleMessenger: default -h localhost -p 5050 -t 5000";
 			buttonStartServer.IsEnabled = true;
 			buttonStopServer.IsEnabled = false;
@@ -44,7 +49,8 @@ namespace IceBench
 			buttonStartClient.IsEnabled = true;
 			buttonIdleClient.IsEnabled = false;
 			buttonStopClient.IsEnabled = false;
-			buttonRestartClient.IsEnabled = false;
+            buttonInvokeCall.IsEnabled = false;
+            buttonRestartClient.IsEnabled = false;
 			textBoxServerRestartInterval.Text = "1000";
 			textBoxClientRestartInterval.Text = "1000";
 			textBoxContentSize.Text = "2";
@@ -86,7 +92,7 @@ namespace IceBench
 				});
 				timer?.Change(Timeout.Infinite, Timeout.Infinite);
 			}
-			Application.Current.Dispatcher.Invoke(delegate
+			System.Windows.Application.Current.Dispatcher.Invoke(delegate
 			{
 				labelServerStatus.Content = $"{status}";
 				labelServerStatus.Foreground = Brushes.SteelBlue;
@@ -125,7 +131,7 @@ namespace IceBench
 			AddMessage("Server Executing: " + operation + ", AMI: " + isAsync);
 		}
 
-		private void IceServer_OnExceptionOccured(Exception exception)
+		private void IceServer_OnExceptionOccured(System.Exception exception)
 		{
 			AddMessage($"Server Exception: {exception.Message}");
 		}
@@ -141,7 +147,7 @@ namespace IceBench
 				});
 				timer?.Change(Timeout.Infinite, Timeout.Infinite);
 			}
-			Application.Current.Dispatcher.Invoke(delegate
+			System.Windows.Application.Current.Dispatcher.Invoke(delegate
 			{
 				if (status != BundleStatus.Unknown)
 				{
@@ -152,7 +158,7 @@ namespace IceBench
 				cbClientHeartbeat.IsEnabled = (status != BundleStatus.Running);
 				checkBoxAsync.IsEnabled = (status == BundleStatus.Running);
 				buttonIdleClient.IsEnabled = (status == BundleStatus.Running);
-				buttonIdleClient.Content = iceClient.Hold ? "Active" : "Idle";
+				buttonIdleClient.Content = iceClient.Hold ? "Run" : "Idle";
 				switch (status)
 				{
 				case BundleStatus.Unknown:
@@ -182,7 +188,7 @@ namespace IceBench
 		}
 
 		private int counter = 0;
-		private Timer timer = null;
+		private System.Threading.Timer timer = null;
 
 		private void TimerCallback(object state)
         {
@@ -204,12 +210,12 @@ namespace IceBench
 			});
 			if (timer == null)
 			{
-				timer = new Timer(TimerCallback);
+				timer = new System.Threading.Timer(TimerCallback);
 			}
 			timer.Change(1000, 1000);
 		}
 
-		private void IceClient_OnExceptionOccured(Exception exception)
+		private void IceClient_OnExceptionOccured(System.Exception exception)
 		{
 			AddMessage($"Client Exception: {exception.Message}");
 			timer.Change(Timeout.Infinite, Timeout.Infinite);
@@ -317,7 +323,8 @@ namespace IceBench
 			buttonRestartServer.IsEnabled = false;
 			buttonStartServer.IsEnabled = false;
 			buttonStopServer.IsEnabled = false;
-			AddMessage("User Restart Server: " + serverArgs);
+            buttonInvokeCall.IsEnabled = false;
+            AddMessage("User Restart Server: " + serverArgs);
 			Task.Run(delegate
 			{
 				iceServer.OnStatusChanged -= IceServer_OnStatusChanged;
@@ -329,10 +336,11 @@ namespace IceBench
 				iceServer.OnStatusChanged += IceServer_OnStatusChanged;
 				iceServer.OnExceptionOccured += IceServer_OnExceptionOccured;
 				iceServer.OnMethodInvoked += IceServer_OnMethodInvoked;
-				Application.Current.Dispatcher.Invoke(delegate
+				System.Windows.Application.Current.Dispatcher.Invoke(delegate
 				{
 					buttonStopServer.IsEnabled = true;
 					buttonRestartServer.IsEnabled = true;
+					buttonInvokeCall.IsEnabled = true;
 				});
 				var acmClose = Bundle.ACMCloseFlag.CloseOff;
 				var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
@@ -368,7 +376,8 @@ namespace IceBench
 			buttonRestartClient.IsEnabled = true;
 			buttonStartClient.IsEnabled = false;
 			buttonStopClient.IsEnabled = true;
-			AddMessage("User Start Client: " + clientArgs);
+            buttonInvokeCall.IsEnabled = true;
+            AddMessage("User Start Client: " + clientArgs);
 			var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
 			var amiEnabled = false;
 			App.Current.Dispatcher.Invoke(() =>
@@ -389,7 +398,8 @@ namespace IceBench
 			buttonRestartClient.IsEnabled = true;
 			buttonStartClient.IsEnabled = true;
 			buttonStopClient.IsEnabled = false;
-			AddMessage("User Stop Client");
+            buttonInvokeCall.IsEnabled = false;
+            AddMessage("User Stop Client");
 			iceClient.Stop();
 		}
 
@@ -398,7 +408,8 @@ namespace IceBench
 			buttonRestartClient.IsEnabled = false;
 			buttonStartClient.IsEnabled = false;
 			buttonStopClient.IsEnabled = false;
-			AddMessage("User Restart Client: " + clientArgs);
+			buttonInvokeCall.IsEnabled = false;
+            AddMessage("User Restart Client: " + clientArgs);
 			Task.Run(delegate
 			{
 				iceClient.OnStatusChanged -= IceClient_OnStatusChanged;
@@ -411,11 +422,12 @@ namespace IceBench
 				iceClient.OnStatusChanged += IceClient_OnStatusChanged;
 				iceClient.OnExceptionOccured += IceClient_OnExceptionOccured;
 				iceClient.OnMethodInvoked += IceClient_OnMethodInvoked;
-				Application.Current.Dispatcher.Invoke(delegate
-				{
+				System.Windows.Application.Current.Dispatcher.Invoke(delegate
+				{	
 					buttonStopClient.IsEnabled = true;
 					buttonRestartClient.IsEnabled = true;
-				});
+                    buttonInvokeCall.IsEnabled = true;
+                });
 				IceClient_OnStatusChanged(iceClient.Status);
 				var acmHeartbeat = Bundle.ACMHeartbeatFlag.HeartbeatOff;
 				var amiEnabled = false;
@@ -450,7 +462,7 @@ namespace IceBench
 		{
 			string str = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.ffff}] {message}";
 			messages.Add(str);
-			Application.Current.Dispatcher.Invoke(delegate
+			System.Windows.Application.Current.Dispatcher.Invoke(delegate
 			{
 				buttonClearLogs.IsEnabled = true;
 				buttonExportLogs.IsEnabled = true;
@@ -488,7 +500,7 @@ namespace IceBench
 			iceClient.ToggleHold();
 			if (iceClient.Hold)
 			{
-				buttonIdleClient.Content = "Active";
+				buttonIdleClient.Content = "Run";
 			}
 			else
 			{
@@ -496,5 +508,28 @@ namespace IceBench
 
 			}
 		}
+
+        private void BtnInvokeCall_Click(object sender, RoutedEventArgs e)
+        {
+			if(isInvoking)
+			{
+				return;
+			}
+			Task.Run(() =>
+			{
+				try
+				{
+                    iceClient.InvokeCall();
+                }
+				catch(System.Exception ex)
+				{
+                    AddMessage($"Invoke Call Exception: {ex.Message}");
+				}
+				finally
+				{
+					isInvoking = false;
+                }
+            });
+        }
     }
 }
